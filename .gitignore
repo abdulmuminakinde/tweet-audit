@@ -1,0 +1,26 @@
+# Binaries for programs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically coverage.out
+coverage.out
+
+# Output of the go profiler, specifically *.pprof
+*.pprof
+
+# Dependency directories (remove the "vendor/" prefix to ignore the vendor directory in the current directory)
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE-specific files/folders can be added here as needed (e.g., VS Code, IntelliJ, etc.)
+.vscode/
+.idea/
