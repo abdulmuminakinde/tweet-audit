@@ -34,7 +34,7 @@ func StreamTweets(file io.Reader) error {
 	}
 
 	for dec.More() {
-		var tweet core.Post
+		var tweet core.RawTweet
 		if err := dec.Decode(&tweet); err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func StreamTweets(file io.Reader) error {
 
 }
 
-func getTweetUrl(tweetObject core.Post) (string, error) {
+func getTweetUrl(tweetObject core.RawTweet) (string, error) {
 	var url string
 	var username string = "lanrey_waju"
 	var tweetID string

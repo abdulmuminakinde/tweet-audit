@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-type Post struct {
+type RawTweet struct {
 	Tweet struct {
 		Retweeted         bool   `json:"retweeted"`
 		Truncated         bool   `json:"truncated"`
