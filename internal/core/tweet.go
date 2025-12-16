@@ -6,14 +6,7 @@ import (
 
 type Post struct {
 	Tweet struct {
-		Retweeted bool `json:"retweeted"`
-		Entities  struct {
-			Urls []struct {
-				URL         string `json:"url"`
-				ExpandedURL string `json:"expanded_url"`
-				DisplayURL  string `json:"display_url"`
-			} `json:"urls"`
-		} `json:"entities"`
+		Retweeted         bool   `json:"retweeted"`
 		Truncated         bool   `json:"truncated"`
 		ID                string `json:"id"`
 		PossiblySensitive bool   `json:"possibly_sensitive"`

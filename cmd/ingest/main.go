@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -37,9 +38,31 @@ func StreamTweets(file io.Reader) error {
 		if err := dec.Decode(&tweet); err != nil {
 			return err
 		}
-		fmt.Println(tweet.Tweet.FullText)
+
+		url, err := getTweetUrl(tweet)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(tweet.Tweet.FullText, url)
+		fmt.Println("===================")
 	}
 
 	return nil
+
+}
+
+func getTweetUrl(tweetObject core.Post) (string, error) {
+	var url string
+	var username string = "lanrey_waju"
+	var tweetID string
+
+	tweetID = tweetObject.Tweet.ID
+	if tweetID == "" {
+		return "", errors.New("unable to get url for tweet")
+	}
+
+	url = fmt.Sprintf("https://x.com/%s/status/%s", username, tweetID)
+	return url, nil
 
 }
