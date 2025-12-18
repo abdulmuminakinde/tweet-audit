@@ -22,6 +22,7 @@ INSERT INTO tweets
 ) VALUES (
   $1, $2, $3, $4, $5, $6
   )
+  ON CONFLICT (tweet_id) DO NOTHING
 RETURNING tweet_id, created_at, full_text, possibly_sensitive, retweeted, url
 `
 
