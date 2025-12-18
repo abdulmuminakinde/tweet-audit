@@ -14,4 +14,5 @@ type Tweet struct {
 	FullText          string
 	PossiblySensitive bool
 	Retweeted         bool
+	Url               string
 }

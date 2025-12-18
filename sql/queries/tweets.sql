@@ -5,9 +5,10 @@ INSERT INTO tweets
   created_at,
   full_text,
   possibly_sensitive,
-  retweeted
+  retweeted,
+  url
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
   )
 RETURNING *;
 

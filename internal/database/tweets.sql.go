@@ -17,11 +17,12 @@ INSERT INTO tweets
   created_at,
   full_text,
   possibly_sensitive,
-  retweeted
+  retweeted,
+  url
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
   )
-RETURNING tweet_id, created_at, full_text, possibly_sensitive, retweeted
+RETURNING tweet_id, created_at, full_text, possibly_sensitive, retweeted, url
 `
 
 type InsertTweetParams struct {
@@ -30,6 +31,7 @@ type InsertTweetParams struct {
 	FullText          string
 	PossiblySensitive bool
 	Retweeted         bool
+	Url               string
 }
 
 func (q *Queries) InsertTweet(ctx context.Context, arg InsertTweetParams) error {
@@ -39,6 +41,7 @@ func (q *Queries) InsertTweet(ctx context.Context, arg InsertTweetParams) error 
 		arg.FullText,
 		arg.PossiblySensitive,
 		arg.Retweeted,
+		arg.Url,
 	)
 	return err
 }
