@@ -3,10 +3,23 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/abdulmuminakinde/tweet-audit/internal/core"
 )
+
+func normalizeText(text string) string {
+	// Remove trailing URLs (http:// or https://)
+	urlPattern := regexp.MustCompile(`\s*https?://\S+\s*$`)
+	text = urlPattern.ReplaceAllString(text, "")
+
+	// Trim any remaining whitespace
+	text = strings.TrimSpace(text)
+
+	return text
+}
 
 func getTweetUrl(tweetObject core.RawTweet) (string, error) {
 	var url string

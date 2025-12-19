@@ -12,7 +12,7 @@ import (
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 )
 
-const BatchSize = 500
+const batchSize = 500
 
 type Config struct {
 	DB      *sql.DB
@@ -32,7 +32,7 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 	r := bufio.NewReader(file)
 	dec := json.NewDecoder(r)
 
-	batch := make([]InsertTweetParams, 0, BatchSize)
+	batch := make([]InsertTweetParams, 0, batchSize)
 
 	// skip text before the actual JSON array
 	// aeems to me like I could just edit the
@@ -64,6 +64,8 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 			return err
 		}
 
+		full_text := normalizeText(tweet.Tweet.FullText)
+
 		url, err := getTweetUrl(tweet)
 		if err != nil {
 			return err
@@ -72,13 +74,13 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 		batch = append(batch, InsertTweetParams{
 			TweetID:           tweet.Tweet.ID,
 			CreatedAt:         parsedCreatedAt,
-			FullText:          tweet.Tweet.FullText,
+			FullText:          full_text,
 			Retweeted:         tweet.Tweet.Retweeted,
 			PossiblySensitive: tweet.Tweet.PossiblySensitive,
 			Url:               url,
 		})
 
-		if len(batch) >= BatchSize {
+		if len(batch) >= batchSize {
 			if err := c.batchInsertTweets(ctx, batch); err != nil {
 				return err
 			}
