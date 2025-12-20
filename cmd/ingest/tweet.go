@@ -11,19 +11,16 @@ import (
 )
 
 func normalizeText(text string) string {
-	// Remove trailing URLs (http:// or https://)
 	urlPattern := regexp.MustCompile(`\s*https?://\S+\s*$`)
 	text = urlPattern.ReplaceAllString(text, "")
 
-	// Trim any remaining whitespace
 	text = strings.TrimSpace(text)
 
 	return text
 }
 
-func getTweetUrl(tweetObject core.RawTweet) (string, error) {
+func getTweetUrl(tweetObject core.RawTweet, username string) (string, error) {
 	var url string
-	var username string = "lanrey_waju"
 	var tweetID string
 
 	tweetID = tweetObject.Tweet.ID

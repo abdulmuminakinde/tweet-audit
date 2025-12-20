@@ -15,8 +15,9 @@ import (
 const batchSize = 500
 
 type Config struct {
-	DB      *sql.DB
-	Queries *database.Queries
+	Username string
+	DB       *sql.DB
+	Queries  *database.Queries
 }
 
 type InsertTweetParams struct {
@@ -66,7 +67,7 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 
 		full_text := normalizeText(tweet.Tweet.FullText)
 
-		url, err := getTweetUrl(tweet)
+		url, err := getTweetUrl(tweet, c.Username)
 		if err != nil {
 			return err
 		}

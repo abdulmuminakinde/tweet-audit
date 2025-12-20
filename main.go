@@ -16,7 +16,12 @@ import (
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL is environment variable is not set")
+		log.Fatal("DATABASE_URL environment variable is not set")
+	}
+
+	username := os.Getenv("USERNAME")
+	if username == "" {
+		log.Fatal("USERNAME environment variable is not set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
@@ -27,8 +32,9 @@ func main() {
 	dbQueries := database.New(dbConn)
 
 	cfg := cmd.Config{
-		DB:      dbConn,
-		Queries: dbQueries,
+		Username: username,
+		DB:       dbConn,
+		Queries:  dbQueries,
 	}
 
 	file, err := core.LoadTweets("./internal/tweets.js")
