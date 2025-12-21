@@ -30,7 +30,6 @@ func getTweetUrl(tweetObject core.RawTweet, username string) (string, error) {
 
 	url = fmt.Sprintf("https://x.com/%s/status/%s", username, tweetID)
 	return url, nil
-
 }
 
 func parseTweetDate(createdAt string) (time.Time, error) {
