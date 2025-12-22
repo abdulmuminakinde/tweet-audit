@@ -8,16 +8,17 @@ import (
 	"io"
 	"time"
 
+	"github.com/abdulmuminakinde/tweet-audit/internal/config"
 	"github.com/abdulmuminakinde/tweet-audit/internal/core"
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 )
 
 const batchSize = 500
 
-type Config struct {
-	Username string
-	DB       *sql.DB
-	Queries  *database.Queries
+type State struct {
+	Config  *config.Config
+	DB      *sql.DB
+	Queries *database.Queries
 }
 
 type InsertTweetParams struct {
@@ -29,7 +30,7 @@ type InsertTweetParams struct {
 	Url               string
 }
 
-func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
+func (s *State) StreamTweets(ctx context.Context, file io.Reader) error {
 	r := bufio.NewReader(file)
 	dec := json.NewDecoder(r)
 
@@ -67,7 +68,7 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 
 		full_text := normalizeText(tweet.Tweet.FullText)
 
-		url, err := getTweetUrl(tweet, c.Username)
+		url, err := getTweetUrl(tweet, s.Config.Username)
 		if err != nil {
 			return err
 		}
@@ -82,7 +83,7 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 		})
 
 		if len(batch) >= batchSize {
-			if err := c.batchInsertTweets(ctx, batch); err != nil {
+			if err := s.batchInsertTweets(ctx, batch); err != nil {
 				return err
 			}
 			batch = batch[:0]
@@ -91,7 +92,7 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 	}
 
 	if len(batch) > 0 {
-		if err := c.batchInsertTweets(ctx, batch); err != nil {
+		if err := s.batchInsertTweets(ctx, batch); err != nil {
 			return err
 		}
 	}
@@ -99,14 +100,14 @@ func (c *Config) StreamTweets(ctx context.Context, file io.Reader) error {
 	return nil
 }
 
-func (c *Config) batchInsertTweets(ctx context.Context, tweets []InsertTweetParams) error {
-	tx, err := c.DB.BeginTx(ctx, nil)
+func (s *State) batchInsertTweets(ctx context.Context, tweets []InsertTweetParams) error {
+	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	qtx := c.Queries.WithTx(tx)
+	qtx := s.Queries.WithTx(tx)
 
 	for _, tweet := range tweets {
 		if err := qtx.InsertTweet(ctx, database.InsertTweetParams{

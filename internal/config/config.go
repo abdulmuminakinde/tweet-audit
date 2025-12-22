@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	APIKey string
+	APIKey   string
+	Username string
 }
 
 const configFile = ".tweetauditconfig.json"
@@ -21,41 +22,39 @@ func getConfigFilePath() (string, error) {
 	return path, nil
 }
 
-func (c *Config) SetAPIKey(apikey string) error {
-	c.APIKey = apikey
-	dat, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
+func LoadOrCreateConfig() (*Config, error) {
 	path, err := getConfigFilePath()
 	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(path, dat, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func Read() (Config, error) {
-	conf := Config{}
-	path, err := getConfigFilePath()
-	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	dat, err := os.ReadFile(path)
 	if err != nil {
-		return Config{}, err
+		if os.IsNotExist(err) {
+			return &Config{}, nil
+		}
+		return nil, err
 	}
 
+	var conf Config
 	err = json.Unmarshal(dat, &conf)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
-	return conf, nil
+	return &conf, nil
+}
+
+func (c *Config) Save() error {
+	path, err := getConfigFilePath()
+	if err != nil {
+		return err
+	}
+
+	dat, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, dat, 0644)
 }

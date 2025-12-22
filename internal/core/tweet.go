@@ -16,7 +16,6 @@ type RawTweet struct {
 }
 
 func LoadTweets(filePath string) (*os.File, error) {
-
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
