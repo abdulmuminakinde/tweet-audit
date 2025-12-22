@@ -9,6 +9,7 @@ import (
 type Config struct {
 	APIKey   string
 	Username string
+	AIModel  string
 }
 
 const configFile = ".tweetauditconfig.json"
