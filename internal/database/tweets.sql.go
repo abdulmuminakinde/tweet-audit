@@ -10,6 +10,40 @@ import (
 	"time"
 )
 
+const getTweets = `-- name: GetTweets :many
+select full_text, url, retweeted
+from tweets
+`
+
+type GetTweetsRow struct {
+	FullText  string
+	Url       string
+	Retweeted bool
+}
+
+func (q *Queries) GetTweets(ctx context.Context) ([]GetTweetsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getTweets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTweetsRow
+	for rows.Next() {
+		var i GetTweetsRow
+		if err := rows.Scan(&i.FullText, &i.Url, &i.Retweeted); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertTweet = `-- name: InsertTweet :exec
 INSERT INTO tweets
 (
