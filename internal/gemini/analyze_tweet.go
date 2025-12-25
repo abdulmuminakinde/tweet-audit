@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,10 +30,10 @@ Be strict but fair. When in doubt, flag for review.
 Focus on content that could harm professional reputation.`
 
 type TweetAnalysisResult struct {
-	Url     string `json:"url"`
-	Action  string `json:"action"`
-	Deleted bool   `json:"deleted"`
-	Reason  string `json:"reason"`
+	TweetUrl string `json:"tweet_url"`
+	Action   string `json:"action"`
+	Deleted  bool   `json:"deleted"`
+	Reason   string `json:"reason"`
 }
 
 func (c *Client) GenerateText(ctx context.Context, text string) (string, error) {
@@ -46,9 +47,11 @@ func (c *Client) GenerateText(ctx context.Context, text string) (string, error) 
 	return resp.Text(), nil
 }
 
-func (c *Client) AnalyzeTweets(ctx context.Context, batch []database.GetTweetsRow) (string, error) {
-	prompt := buildPrompt(batch)
+func (c *Client) AnalyzeTweets(ctx context.Context, tweets []database.GetTweetsRow) ([]TweetAnalysisResult, error) {
+	prompt := buildPrompt(tweets)
+
 	part := genai.NewPartFromText(systemInstruction)
+
 	config := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
 		ResponseSchema: &genai.Schema{
@@ -78,13 +81,17 @@ func (c *Client) AnalyzeTweets(ctx context.Context, batch []database.GetTweetsRo
 		},
 		SystemInstruction: &genai.Content{Parts: []*genai.Part{part}},
 	}
-	result, err := c.client.Models.GenerateContent(ctx, c.model, genai.Text(prompt), config)
+	resp, err := c.client.Models.GenerateContent(ctx, c.model, genai.Text(prompt), config)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to analyze batch, %w", err)
 	}
 
-	return result.Text(), nil
+	var results []TweetAnalysisResult
+	if err := json.Unmarshal([]byte(resp.Text()), &results); err != nil {
+		return nil, fmt.Errorf("failed to parse the response: %w", err)
+	}
 
+	return results, nil
 }
 
 func buildPrompt(tweets []database.GetTweetsRow) string {
