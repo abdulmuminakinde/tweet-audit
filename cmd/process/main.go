@@ -1,27 +1,19 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"fmt"
+	"database/sql"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/abdulmuminakinde/tweet-audit/internal/config"
+	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 	"github.com/abdulmuminakinde/tweet-audit/internal/gemini"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter tweet to be analyzed: ")
-
-	question, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	trimmedQuestion := strings.TrimSpace(question)
 
 	ctx := context.Background()
 	cfg, err := config.LoadOrCreateConfig()
@@ -34,10 +26,23 @@ func main() {
 		log.Fatal("error creating gemini client")
 	}
 
-	result, err := geminiclient.GenerateText(ctx, trimmedQuestion)
+	dbURL := os.Getenv("DATABASE_URL")
+
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+
+	dbQueries := database.New(dbConn)
+
+	tweets, err := dbQueries.GetTweets(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gemini.ProcessBatchedTweets(ctx, geminiclient, tweets)
 	if err != nil {
 		log.Fatalf("error creating client: %v", err)
 	}
 
-	fmt.Println(result)
 }
