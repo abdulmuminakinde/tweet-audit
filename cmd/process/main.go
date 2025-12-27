@@ -21,7 +21,7 @@ func main() {
 		log.Fatal("error loading config")
 	}
 
-	geminiclient, err := gemini.NewClient(ctx, cfg)
+	client, err := gemini.NewClient(ctx, cfg)
 	if err != nil {
 		log.Fatal("error creating gemini client")
 	}
@@ -35,14 +35,7 @@ func main() {
 
 	dbQueries := database.New(dbConn)
 
-	tweets, err := dbQueries.GetTweets(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	processor := NewTweetProcessor(client, dbQueries)
 
-	gemini.ProcessBatchedTweets(ctx, geminiclient, tweets)
-	if err != nil {
-		log.Fatalf("error creating client: %v", err)
-	}
-
+	processor.ProcessAllTweets(ctx)
 }

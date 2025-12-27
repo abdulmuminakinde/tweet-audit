@@ -1,4 +1,4 @@
-package gemini
+package main
 
 import "github.com/abdulmuminakinde/tweet-audit/internal/database"
 
