@@ -36,17 +36,6 @@ type TweetAnalysisResult struct {
 	Reason   string `json:"reason"`
 }
 
-func (c *Client) GenerateText(ctx context.Context, text string) (string, error) {
-	config := &genai.GenerateContentConfig{SystemInstruction: genai.NewContentFromText(systemInstruction, genai.RoleModel)}
-
-	resp, err := c.client.Models.GenerateContent(ctx, c.model, genai.Text(text), config)
-	if err != nil {
-		return "", err
-	}
-
-	return resp.Text(), nil
-}
-
 func (c *Client) AnalyzeTweets(ctx context.Context, tweets []database.GetTweetsRow) ([]TweetAnalysisResult, error) {
 	prompt := buildPrompt(tweets)
 
