@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/abdulmuminakinde/tweet-audit/internal/config"
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 	"github.com/abdulmuminakinde/tweet-audit/internal/gemini"
 )
@@ -14,12 +15,20 @@ import (
 type TweetProcessor struct {
 	client    *gemini.Client
 	dbQueries *database.Queries
+	config    *config.Config
 }
 
-func NewTweetProcessor(client *gemini.Client, queries *database.Queries) *TweetProcessor {
+func NewTweetProcessor(client *gemini.Client, queries *database.Queries, config *config.Config) *TweetProcessor {
+	if config.BatchSize == 0 {
+		config.BatchSize = 200
+	}
+	if config.Limiter == 0 {
+		config.Limiter = 12
+	}
 	return &TweetProcessor{
 		client:    client,
 		dbQueries: queries,
+		config:    config,
 	}
 }
 
@@ -29,7 +38,7 @@ func (p *TweetProcessor) ProcessAllTweets(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch tweets: %w", err)
 	}
 
-	const batchSize = 200
+	batchSize := p.config.BatchSize
 
 	batches := chunkTweets(tweets, batchSize)
 
@@ -45,7 +54,7 @@ func (p *TweetProcessor) ProcessBatchesConcurrently(ctx context.Context, batches
 	jobs := make(chan []database.GetTweetsRow, len(batches))
 	results := make(chan []gemini.TweetAnalysisResult, len(batches))
 
-	limiter := time.NewTicker(12 * time.Second) // to match the free tier limit of 5 RPM
+	limiter := time.NewTicker(time.Duration(p.config.Limiter) * time.Second) // to match the free tier limit of 5 RPM
 
 	defer limiter.Stop()
 
