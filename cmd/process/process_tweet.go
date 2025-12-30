@@ -29,7 +29,7 @@ func (p *TweetProcessor) ProcessAllTweets(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch tweets: %w", err)
 	}
 
-	const batchSize = 40
+	const batchSize = 200
 
 	batches := chunkTweets(tweets, batchSize)
 
@@ -45,7 +45,8 @@ func (p *TweetProcessor) ProcessBatchesConcurrently(ctx context.Context, batches
 	jobs := make(chan []database.GetTweetsRow, len(batches))
 	results := make(chan []gemini.TweetAnalysisResult, len(batches))
 
-	limiter := time.NewTicker(6 * time.Second)
+	limiter := time.NewTicker(12 * time.Second) // to match the free tier limit of 5 RPM
+
 	defer limiter.Stop()
 
 	var wg sync.WaitGroup
@@ -97,6 +98,7 @@ func (p *TweetProcessor) worker(
 		log.Printf("Worker %d: analyzed %d tweets", workerID, len(batchResults))
 
 		results <- batchResults
+		fmt.Println(batchResults)
 	}
 
 	log.Printf("Worker %d finished", workerID)
