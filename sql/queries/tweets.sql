@@ -13,3 +13,8 @@ INSERT INTO tweets
   ON CONFLICT (tweet_id) DO NOTHING
 RETURNING *;
 
+-- name: GetTweets :many
+select full_text, url, retweeted
+from tweets
+;
+
