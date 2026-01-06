@@ -7,11 +7,44 @@ Hexagonal architecture approach for modularity benefits (client, processor, data
 ### Why?
 
 - While this project implements Gemini client in `internal/client/gemini`, it's easy to swap AI providers later.
-  I reckon I could implement an interface to make this even more flexible when the need arises. This approach absolves the
-  core logic from being tampered with.
+  An interface-based approach would make this even more flexible when the need arises. This approach keeps the core logic from being tampered with.
 - Testing is easier as a result of the clear boundaries.
 - Simple, explicit dependencies
 
 ### Alternatives
 
 - Single package approach with everything in package main.
+  Rejected as it's unfit for this kind of project. Makes it impossible to reuse components and testing is going to be a nightmare.
+
+## Concurrency Strategy
+
+Configurable concurrency API calls with worker pools, waitgroups and channels, defaulting to conservative settings for Gemini free tier
+
+### Why?
+
+Gemini's free tier has five requests per minute limit (12 seconds between requests). Under this constraint, multiple workers provide no speed benefit since the rate limiter forces sequential execution.
+
+However, I decided to go wuth the concurrency infrastructure with configurable workers because of the following:
+
+- Users on paid tiers can set `NUM_WORKERS=10` experience immediate 10x speed.
+- Scalable and does not need to be refactored later when the needs arise.
+
+### Alternatives
+
+- Could have gone the simpler route of keeping everything synchronous because of the strict free tier limit, but that is neither scalable nor future proof. As such, I thought the added complexity of concurrency was worth it. No need to refactor for higher rate limits. Just adjust the configuration.
+
+## Batching
+
+Dynamic batch sizing based on daily API limits (default of about 156 tweets per batch)
+
+### Why?
+
+Again, this decision was informed by the limits of the Gemini free tier. Free tier allows only 20 requests per day. With 3128 tweets, batch size must be 3128 ÷ 20 (156 tweets) per request to process everything in one day. Again, batch size is configurable. The batch size could potentially be larger given the 1M token input limit on the free tier.
+
+Users can override batch size for different use cases and depending on the tier.
+
+A smaller batch (20-50) requres paid tier (100+ requests/day) and offers better granularity, better error isolation and arguably more detailed analysis. It would however require a lot more API calls that would exceed the free tier's 20 requests/day. Only makes sense with paid tier.
+
+### Alternatives
+
+- Smaller batch sizes require more API calls exceeding daily limits and reducing API efficiency.
