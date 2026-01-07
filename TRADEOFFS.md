@@ -48,3 +48,28 @@ A smaller batch (20-50) requres paid tier (100+ requests/day) and offers better 
 ### Alternatives
 
 - Smaller batch sizes require more API calls exceeding daily limits and reducing API efficiency.
+
+## Error Handling Strategy
+
+Retry with exponential backoff, log and continue
+
+### Why?
+
+Resilience. Without a error handling strategy, the code fails on the first network downtime.
+Implemented a 3 retry attempts with 1s, 4s, 9s backoff (exponential). Added a smart retry logic taht knows not to retry invalid API keys but attempts to retry rate limits. Approach respects cancellation during retries.
+
+Smart retry logic ensures the system doesn't waste retries on unrecoverable errors. The system is resilient to transient API blips.
+
+## Technology Choices
+
+### Why Go?
+
+- Concurrency primitives (goroutines, channels)
+- Strong typing
+- Robust standard library
+
+### Why NOT Cobra?
+
+- Standard library flag package is sufficient
+- External dependencies kept minimal
+- Simple two-command tool doesn't need a complex CLI framework
