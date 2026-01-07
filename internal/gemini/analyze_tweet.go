@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 	"google.golang.org/genai"
@@ -37,6 +39,46 @@ type TweetAnalysisResult struct {
 }
 
 func (c *Client) AnalyzeTweets(ctx context.Context, tweets []database.GetTweetsRow) ([]TweetAnalysisResult, error) {
+	if len(tweets) == 0 {
+		return nil, fmt.Errorf("cannot analyze empty batch")
+	}
+
+	const maxRetries = 3
+	var lastErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		results, err := c.attemptAnalysis(ctx, tweets)
+		if err == nil {
+			if len(results) != len(tweets) {
+				log.Printf("Warning: expected %d results, got %d (batch size: %d tweets)", len(tweets), len(results), len(tweets))
+			}
+			return results, nil
+		}
+
+		lastErr = err
+
+		if !c.shouldRetry(err) {
+			return nil, fmt.Errorf("batch of %d tweets failed: %w", len(tweets), err)
+		}
+
+		if attempt < maxRetries {
+			backoff := time.Duration(attempt*attempt) * time.Second
+			log.Printf("Attempt %d/%d failed for batch of %d tweets: %v. Retrying in %v...",
+				attempt, maxRetries, len(tweets), err, backoff)
+
+			select {
+			case <-time.After(backoff):
+
+			case <-ctx.Done():
+				return nil, fmt.Errorf("context canceled during retry: %w", ctx.Err())
+			}
+		}
+
+	}
+	return nil, fmt.Errorf("batch of %d tweets failed after %d attempts: %w", len(tweets), maxRetries, lastErr)
+}
+
+func (c *Client) attemptAnalysis(ctx context.Context, tweets []database.GetTweetsRow) ([]TweetAnalysisResult, error) {
 	prompt := buildPrompt(tweets)
 
 	part := genai.NewPartFromText(systemInstruction)
@@ -72,7 +114,7 @@ func (c *Client) AnalyzeTweets(ctx context.Context, tweets []database.GetTweetsR
 	}
 	resp, err := c.client.Models.GenerateContent(ctx, c.model, genai.Text(prompt), config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to analyze batch, %w", err)
+		return nil, c.wrapError(fmt.Errorf("API call failed: %w", err))
 	}
 
 	var results []TweetAnalysisResult

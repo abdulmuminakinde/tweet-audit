@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"time"
 
 	"github.com/abdulmuminakinde/tweet-audit/internal/config"
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
@@ -16,6 +17,8 @@ import (
 func main() {
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
+	defer cancel()
 	cfg, err := config.LoadOrCreateConfig()
 	if err != nil {
 		log.Fatal("error loading config")
