@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"log"
 	"os"
 	"time"
@@ -16,13 +17,22 @@ import (
 
 func main() {
 
+	setBatchSize := flag.Int("setbatchsize", 200, "The batch size for tweets")
+	setNumWorkers := flag.Int("setnumworkers", 3, "Number of workers to analyze tweets")
+	setLimiter := flag.Int("limiter", 12, "The number of seconds between API calls")
+
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancel()
 	cfg, err := config.LoadOrCreateConfig()
+
 	if err != nil {
 		log.Fatal("error loading config")
 	}
+
+	cfg.BatchSize = *setBatchSize
+	cfg.NumWorkers = *setNumWorkers
+	cfg.Limiter = *setLimiter
 
 	client, err := gemini.NewClient(ctx, cfg)
 	if err != nil {

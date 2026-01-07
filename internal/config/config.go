@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	APIKey    string
-	Username  string
-	AIModel   string
-	BatchSize int
-	Limiter   int
+	APIKey     string
+	Username   string
+	AIModel    string
+	BatchSize  int
+	Limiter    int
+	NumWorkers int
 }
 
 const configFile = ".tweetauditconfig.json"
