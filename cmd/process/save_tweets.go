@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,7 +9,7 @@ import (
 	"github.com/abdulmuminakinde/tweet-audit/internal/gemini"
 )
 
-func (p *TweetProcessor) saveResults(ctx context.Context, results []gemini.TweetAnalysisResult) error {
+func (p *TweetProcessor) saveJSON(results []gemini.TweetAnalysisResult) error {
 	return p.writeResultsToFile(results)
 }
 
