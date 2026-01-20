@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/abdulmuminakinde/tweet-audit/internal/config"
+	"github.com/abdulmuminakinde/tweet-audit/internal/csv"
 	"github.com/abdulmuminakinde/tweet-audit/internal/database"
 	"github.com/abdulmuminakinde/tweet-audit/internal/gemini"
 )
@@ -46,6 +48,50 @@ func (p *TweetProcessor) ProcessAllTweets(ctx context.Context) error {
 
 	log.Printf("Saving %d results...", len(results))
 	return p.saveResults(ctx, results)
+
+}
+
+func (p *TweetProcessor) saveCSV(results []gemini.TweetAnalysisResult) error {
+	csvData, err := csv.ConvertToCSV(results)
+	if err != nil {
+		return fmt.Errorf("failed to convert to CSV: %w", err)
+	}
+
+	filename := fmt.Sprintf("results_%s.csv", time.Now().Format("2006-01-02"))
+	if err := os.WriteFile(filename, []byte(csvData), 0644); err != nil {
+		return fmt.Errorf("failed to write CSV: %w", err)
+	}
+
+	log.Printf("✓ CSV saved to %s", filename)
+	return nil
+}
+
+func (p *TweetProcessor) saveResults(ctx context.Context, results []gemini.TweetAnalysisResult) error {
+	var wg sync.WaitGroup
+	errors := make(chan error, 2)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		errors <- p.saveJSON(results)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		errors <- p.saveCSV(results)
+	}()
+
+	wg.Wait()
+	close(errors)
+
+	for err := range errors {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *TweetProcessor) ProcessBatchesConcurrently(ctx context.Context, batches [][]database.GetTweetsRow) []gemini.TweetAnalysisResult {
@@ -107,7 +153,6 @@ func (p *TweetProcessor) worker(
 		log.Printf("Worker %d: analyzed %d tweets", workerID, len(batchResults))
 
 		results <- batchResults
-		fmt.Println(batchResults)
 	}
 
 	log.Printf("Worker %d finished", workerID)

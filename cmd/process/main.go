@@ -17,7 +17,7 @@ import (
 
 func main() {
 
-	setBatchSize := flag.Int("setbatchsize", 200, "The batch size for tweets")
+	setBatchSize := flag.Int("setbatchsize", 400, "The batch size for tweets")
 	setNumWorkers := flag.Int("setnumworkers", 3, "Number of workers to analyze tweets")
 	setLimiter := flag.Int("limiter", 12, "The number of seconds between API calls")
 
@@ -48,7 +48,7 @@ func main() {
 
 	dbQueries := database.New(dbConn)
 
-	processor := NewTweetProcessor(client, dbQueries)
+	processor := NewTweetProcessor(client, dbQueries, cfg)
 
 	processor.ProcessAllTweets(ctx)
 }
